@@ -1,0 +1,89 @@
+# ============================================================================
+# Climate Capacitor — default configuration
+# Every tunable knob lives here so experiments are reproducible and the
+# topography->permittivity parameterization can be swapped without code edits.
+# ============================================================================
+
+# --- Spatial / temporal domain -------------------------------------------
+domain:
+  # Geographic bounds. Full globe by default; narrow to a region for fast dev.
+  lat_min: -90.0
+  lat_max:  90.0
+  lon_min: -180.0
+  lon_max:  180.0
+  # Target grid resolution in degrees. 1.5 deg matches the WeatherBench2 ERA5
+  # native grid (no regridding needed). ~150 km, coarse-global, laptop-friendly.
+  resolution_deg: 1.5
+
+time:
+  start: "2010-01-01"
+  end:   "2019-12-31"
+  # Time-split validation: fraction of the period used for calibration.
+  train_fraction: 0.65          # ~6.5 yr train, ~3.5 yr validate
+
+# --- Data sources ---------------------------------------------------------
+data:
+  era5:
+    # "cloud" = stream ARCO-ERA5 from GCS (no bulk download).
+    # "cds"   = download via Copernicus cdsapi (needs ~/.cdsapirc).
+    source: "cloud"
+    variable: "2m_temperature"
+    # WeatherBench2 ERA5: public, 1.5deg, 6-hourly (4 samples/day) -> cheap
+    # daily-max. Swap to the ARCO 0.25deg URI below to refine resolution later.
+    cloud_uri: "gs://weatherbench2/datasets/era5/1959-2022-6h-240x121_equiangular_with_poles_conservative.zarr"
+    # cloud_uri_hires: "gs://gcp-public-data-arco-era5/ar/full_37-1h-0p25deg-chunk-1.zarr-v3"
+    # Which daily statistic to keep from the sub-daily samples. "max" preserves
+    # heat extremes that a daily mean would smooth away (afternoon peaks).
+    daily_statistic: "max"        # max | min | mean
+    cache_dir: "data/cache"       # local cache of the regridded daily subset
+  topography:
+    source: "etopo"
+    path: "data/raw/etopo.nc"   # downloaded once, regridded to the grid above
+  disasters:
+    source: "emdat"
+    path: "data/raw/emdat.csv"  # MANUAL one-time export from emdat.be (login)
+
+# --- Physics: thermal charge ---------------------------------------------
+charge:
+  window_days: 30               # sliding-window integration length
+  decay_per_day: 0.02           # energy dissipation factor (0 = no decay)
+  climatology_smooth_days: 15   # smoothing of the day-of-year climatology
+
+# --- Physics: permittivity (topography -> epsilon) -----------------------
+# `method` selects a registered parameterization in physics/permittivity.py.
+# Swap this string to run a different terrain model; params feed that method.
+permittivity:
+  method: "linear"              # linear | log | slope | combined
+  eps_min: 0.2                  # rugged terrain (bottleneck, low permittivity)
+  eps_max: 1.0                  # smooth terrain / ocean (high permittivity)
+  params:
+    elevation_ref_m: 4000.0     # elevation at which eps approaches eps_min
+    slope_weight: 0.5           # weight of slope vs elevation in "combined"
+
+# --- Physics: breakdown field --------------------------------------------
+breakdown:
+  # Critical threshold for flagging a cell. "percentile" adapts to the data;
+  # "absolute" uses a fixed value of the breakdown field.
+  threshold_mode: "percentile"
+  threshold_value: 97.5         # if percentile: top 2.5% of cells flagged
+
+# --- Detection / clustering ----------------------------------------------
+clustering:
+  algorithm: "dbscan"           # dbscan | kmeans
+  dbscan_eps_cells: 2.0         # neighborhood radius in grid cells
+  dbscan_min_samples: 5         # min cells to form an event
+
+# --- Validation against EM-DAT -------------------------------------------
+validation:
+  spatial_radius_km: 100.0
+  temporal_window_hours: 48
+  success:
+    min_recall: 0.30
+    min_precision: 0.10
+    max_pvalue: 0.05
+
+# --- Misc -----------------------------------------------------------------
+run:
+  seed: 42
+  output_dir: "outputs"
+  log_level: "INFO"
