@@ -28,13 +28,47 @@ Exploratory by design: a clean **null result is a valid scientific outcome**.
 - [x] **Phase 1 — Physics core (synthetic data):** `anomaly` → `charge` (window+decay)
   → `breakdown` field. Fully implemented + a synthetic smoke test (`scripts/run_synthetic.py`)
   runnable with **no downloads**. Verified: planted heatwave stands out 30x above median; unit tests pass.
-- [ ] **Phase 2 — Data layer:** ERA5 cloud loader + regrid + cache; ETOPO loader + regrid;
-  EM-DAT parser → tidy events table. Same interfaces the synthetic test already uses.
-- [ ] **Phase 3 — Detection:** threshold zones → DBSCAN/KMeans events → origin, precursor
-  curve, trigger classification (heat- vs terrain-driven).
-- [ ] **Phase 4 — Validation:** match predicted events to EM-DAT (100 km / ±48 h);
-  recall / precision / p-value / ROC. Targets: recall>0.30, precision>0.10, p<0.05.
-- [ ] **Phase 5 — Visualization:** predicted-vs-actual heatmaps, precursor plots, optional animations.
+- [x] **Phase 2 — Data layer:** ERA5 cloud loader (WeatherBench2 1.5deg, parallel fetch + cache);
+  terrain derived from same store (elevation/slope/roughness/land-mask, no extra download);
+  EM-DAT parser → tidy events table with **country-centroid fallback** (`geo_precision` =
+  exact|estimated, so heatwaves with no coords are still usable). `scripts/run_real.py` runs the
+  full pipeline on the real Earth. Verified: 2010 Russian heatwave appears in the anomaly map.
+  - Source switched to WeatherBench2 (public, no CDS account, daily-max from 6-hourly).
+  - Data status: full 10-yr (2010-2019) ERA5 cube cached (~840 MB); EM-DAT 4,018 climate events
+    (616 exact + 3,402 estimated).
+- [x] **Phase 3 — Detection:** per-day DBSCAN blobs → union-find temporal linking → event
+  catalog with inception, duration, peak stress, trigger (heat/terrain), precursor ramp.
+  (`pipeline.py`, `analysis/clustering.py`, `analysis/events.py`, `scripts/run_detect.py`.)
+  First run: 7,053 predicted events over 2010-2019.
+- [x] **Phase 4 — Validation:** coverage matching + recall/precision + analytic p-value +
+  precision-recall curve, split by exact/estimated. (`analysis/validation.py`,
+  `scripts/run_validate.py`.) **First-config result: weak/null** (see below).
+- [~] **Phase 5 — Visualization:** field maps, predicted-vs-actual map, PR curve all done.
+  Remaining nice-to-haves: time animation, precursor-curve plots, cartopy coastlines.
+
+## RESULTS — first configuration (mean / linear-ε / 97.5pct / 1.5° / 100km-48h)
+
+- Recall **0.1%**, Precision **0%**, p=0.42 → **no skill at the strict 100 km scale**.
+- Signal only emerges at coarse radius: significant (p<0.05) at **750-1000 km**, but still
+  only ~3-8% recall. So at best a weak, region-scale association.
+- **Why (diagnostic map):** predictions concentrate on rugged terrain (Himalaya/Andes) and
+  poles because low-ε amplifies the breakdown field there; real flood/storm disasters cluster
+  in populated lowlands. Spatial mismatch ⇒ near-zero overlap.
+- **Caveats / artifacts to address before concluding:**
+  - Polar artifact: spatial gradient is in degrees, distorted near poles (lon lines converge).
+    Fix: compute gradient in km (cos-lat weighting) and/or mask |lat|>70.
+  - 100 km match radius < one 1.5° cell (~167 km) → metric near-impossible at this resolution.
+  - ε dynamic range may be too wide (terrain dominates). Try higher eps_min.
+- **This is a legitimate exploratory result** (proposal: null results are valuable), but it's
+  ONE point in the experiment space. The knobs below remain to be swept.
+
+## Next scientific steps (the actual experiments)
+
+- Fix polar gradient + retest. Try matching radius ~200-300 km (grid-appropriate).
+- Sweep `permittivity.method` (linear/log/slope/combined) and `eps_min/eps_max`.
+- Sweep `daily_statistic` (needs max/min cubes — extra pulls) + implement `"extreme"`.
+- Sweep `charge.window_days`, `decay_per_day`, breakdown `threshold_value`.
+- Validate against **heatwaves specifically** (the model is about heat) rather than all disasters.
 
 ## Principles
 

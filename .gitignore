@@ -28,6 +28,9 @@ env/
 .cdsapirc
 .env
 
+# Editor/tool temp files
+*.tmp.*
+
 # OS / editor
 .DS_Store
 Thumbs.db

@@ -11,9 +11,14 @@ domain:
   lat_max:  90.0
   lon_min: -180.0
   lon_max:  180.0
-  # Target grid resolution in degrees. 1.5 deg matches the WeatherBench2 ERA5
-  # native grid (no regridding needed). ~150 km, coarse-global, laptop-friendly.
+  # Target grid resolution in degrees.
+  #   1.5   -> 240x121 store, ~0.5 GB, laptop-safe (USE THIS on 16 GB machines).
+  #   0.703 -> 512x256 store, ~5-7 GB peak RAM -> caused BSOD on a 16 GB laptop.
+  #            Only use on a machine with >=32 GB RAM (see cloud_uri below too).
   resolution_deg: 1.5
+  # Exclude very high latitudes from the analysis: the poles have ~no disasters
+  # and produce noisy gradients. |lat| > this is dropped. (Disasters max ~62 deg.)
+  analysis_lat_max: 66.0
 
 time:
   start: "2010-01-01"
@@ -28,20 +33,31 @@ data:
     # "cds"   = download via Copernicus cdsapi (needs ~/.cdsapirc).
     source: "cloud"
     variable: "2m_temperature"
-    # WeatherBench2 ERA5: public, 1.5deg, 6-hourly (4 samples/day) -> cheap
-    # daily-max. Swap to the ARCO 0.25deg URI below to refine resolution later.
+    # WeatherBench2 ERA5: public, 6-hourly (4 samples/day) -> cheap daily stats.
+    # ACTIVE = 1.5deg (240x121), laptop-safe. To use the ~78 km grid on a bigger
+    # machine, set resolution_deg: 0.703 above AND swap to the 512x256 URI below.
     cloud_uri: "gs://weatherbench2/datasets/era5/1959-2022-6h-240x121_equiangular_with_poles_conservative.zarr"
-    # cloud_uri_hires: "gs://gcp-public-data-arco-era5/ar/full_37-1h-0p25deg-chunk-1.zarr-v3"
-    # Which daily statistic to keep from the sub-daily samples. "max" preserves
-    # heat extremes that a daily mean would smooth away (afternoon peaks).
-    daily_statistic: "max"        # max | min | mean
+    # cloud_uri_0p7deg: "gs://weatherbench2/datasets/era5/1959-2022-6h-512x256_equiangular_conservative.zarr"
+    # Which daily statistic to keep from the sub-daily samples.
+    #   mean -> robust, never flips sign (default)
+    #   max  -> hot-extreme biased ;  min -> cold-extreme biased
+    # ("extreme" = most-anomalous-moment is a Phase-4 experiment: it needs the
+    #  anomaly step, so it's applied after climatology, not here at load time.)
+    daily_statistic: "mean"       # max | min | mean
     cache_dir: "data/cache"       # local cache of the regridded daily subset
   topography:
-    source: "etopo"
-    path: "data/raw/etopo.nc"   # downloaded once, regridded to the grid above
+    # Terrain is derived from the SAME WeatherBench2 store (surface geopotential),
+    # so it's perfectly grid-aligned with temperature and needs no extra download.
+    source: "weatherbench2"
+    etopo_path: "data/raw/etopo.nc"  # alternative hi-res source, only if ever needed
   disasters:
-    source: "emdat"
-    path: "data/raw/emdat.csv"  # MANUAL one-time export from emdat.be (login)
+    # "gdis"  = GDIS precise coordinates joined to EM-DAT dates (best; all exact).
+    # "emdat" = EM-DAT only, with country-centroid fallback for missing coords.
+    source: "gdis"
+    emdat_path: "data/raw/public_emdat_custom_request_2026-06-04_60fb1c7a-4eac-4831-b601-8ac763ee07d9.xlsx"
+    gdis_path: "data/raw/pend-gdis-1960-2018-disasterlocations.csv"
+    # Back-compat alias for the EM-DAT-only path used by the older loader.
+    path: "data/raw/public_emdat_custom_request_2026-06-04_60fb1c7a-4eac-4831-b601-8ac763ee07d9.xlsx"
 
 # --- Physics: thermal charge ---------------------------------------------
 charge:
@@ -54,7 +70,7 @@ charge:
 # Swap this string to run a different terrain model; params feed that method.
 permittivity:
   method: "linear"              # linear | log | slope | combined
-  eps_min: 0.2                  # rugged terrain (bottleneck, low permittivity)
+  eps_min: 0.5                  # rugged terrain (best of the 1.5deg sweep: 0.4-0.6)
   eps_max: 1.0                  # smooth terrain / ocean (high permittivity)
   params:
     elevation_ref_m: 4000.0     # elevation at which eps approaches eps_min
@@ -69,9 +85,10 @@ breakdown:
 
 # --- Detection / clustering ----------------------------------------------
 clustering:
-  algorithm: "dbscan"           # dbscan | kmeans
-  dbscan_eps_cells: 2.0         # neighborhood radius in grid cells
-  dbscan_min_samples: 5         # min cells to form an event
+  algorithm: "components"       # components (fast connected-components) | dbscan (original, slower)
+  dbscan_eps_cells: 2.0         # neighborhood radius in grid cells (spatial)
+  dbscan_min_samples: 5         # min flagged cells to form a blob
+  link_radius_km: 300.0         # link day-to-day blobs within this distance into one event
 
 # --- Validation against EM-DAT -------------------------------------------
 validation:
