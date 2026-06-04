@@ -34,6 +34,8 @@ def plot_field(
     out_path = Path(out_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
+    # Be robust to source dim order: ERA5 is (lon, lat), synthetic is (lat, lon).
+    field = field.transpose("lat", "lon")
     lon = field["lon"].values
     lat = field["lat"].values
     vals = field.values
