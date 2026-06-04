@@ -17,6 +17,7 @@ from __future__ import annotations
 import hashlib
 from pathlib import Path
 
+import dask
 import numpy as np
 import xarray as xr
 
@@ -72,7 +73,8 @@ def load_era5(cfg: dict, start: str, end: str, use_cache: bool = True) -> xr.Dat
 
     if use_cache and cache.exists():
         print(f"  [cache hit] {cache}")
-        return xr.open_dataarray(cache)
+        # float32 halves memory vs the netCDF's float64 (big deal for RAM).
+        return xr.open_dataarray(cache).transpose("time", "lat", "lon").astype("float32")
 
     print(f"  opening cloud store (lazy): {e['cloud_uri']}")
     ds = xr.open_zarr(e["cloud_uri"], storage_options={"token": "anon"}, chunks={})
@@ -100,8 +102,13 @@ def load_era5(cfg: dict, start: str, end: str, use_cache: bool = True) -> xr.Dat
 
     daily = regrid_to(daily, d["resolution_deg"], d)
 
-    print("  fetching requested bytes from cloud (.load) ...")
-    daily = daily.load()             # <-- the only point real data is downloaded
+    # The store is chunked in tiny 8-step blocks, so a year is ~180 little reads.
+    # Fetch them concurrently with a big thread pool (network I/O, not CPU bound)
+    # -> turns minutes of serial round-trips into seconds of parallel ones.
+    print("  fetching from cloud in parallel (threaded) ...")
+    with dask.config.set(scheduler="threads", num_workers=32):
+        daily = daily.compute()      # <-- the only point real data is downloaded
+    daily = daily.transpose("time", "lat", "lon").astype("float32")  # std order + half memory
 
     if use_cache:
         cache.parent.mkdir(parents=True, exist_ok=True)

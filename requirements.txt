@@ -11,16 +11,20 @@ netCDF4>=1.6
 zarr>=2.16
 gcsfs>=2024.2            # stream ARCO-ERA5 from Google Cloud (no bulk download)
 
-# Topography (ETOPO) raster handling + regridding
-rioxarray>=0.15
-rasterio>=1.3
+# Topography is derived from the WeatherBench2 store (no raster libs needed).
+# Uncomment only if you switch to a standalone ETOPO/GeoTIFF source later:
+# rioxarray>=0.15
+# rasterio>=1.3
 
 # Optional ERA5 access via Copernicus CDS (alternative to cloud streaming)
-cdsapi>=0.6
+# cdsapi>=0.6
 
 # Visualization
 matplotlib>=3.8
 # cartopy>=0.22         # optional: nicer map projections; can be fiddly to install on Windows
+
+# Disaster data (EM-DAT ships as .xlsx)
+openpyxl>=3.1
 
 # Config + utilities
 pyyaml>=6.0
