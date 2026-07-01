@@ -283,6 +283,9 @@ config switch (resolution_deg + cloud_uri) for a bigger machine / the project pa
 - Precursor lookback (2→30 d): raised raw recall but **p→1.0** → the gain is chance, not skill.
 - Finer 0.7° grid: **crashed the laptop (BSOD)**; lookback-2d column matched 1.5° anyway, so it
   would not change the verdict.
+- Daily statistic (mean / max / min): **max is best** (~40% better than mean: 4.79% vs 3.46%
+  recall @500km — heat extremes carry the most signal), but still ~1.3% @250km — far below target.
+  The statistic choice does not rescue the model. (So the earlier "one value only" gap is now closed.)
 
 ---
 
