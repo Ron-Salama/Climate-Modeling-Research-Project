@@ -41,10 +41,12 @@ def run_pipeline(cfg: dict, verbose: bool = True, keep_temp: bool = True, keep_a
 
     say("[4/6] permittivity -> breakdown field ...")
     eps = permittivity.compute_permittivity(topo["elevation"], topo["slope"], cfg["permittivity"])
-    E = breakdown.breakdown_field(Q, eps)
+    E = breakdown.breakdown_field(Q, eps, mode=cfg["breakdown"].get("field", "gradient"))
+    land = (topo["land_mask"] > 0.5) if cfg["breakdown"].get("land_only") else None
     mask, thr = breakdown.flag_zones(E, cfg["breakdown"]["threshold_mode"],
                                      cfg["breakdown"]["threshold_value"],
-                                     lat_limit=cfg["domain"].get("analysis_lat_max"))
+                                     lat_limit=cfg["domain"].get("analysis_lat_max"),
+                                     land_mask=land)
 
     say("[5/6] clustering flagged cells into events ...")
     blobs = clustering.detect_daily_blobs(mask, E, cfg)
