@@ -18,11 +18,26 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-# Disaster types relevant to the thermal-capacitor hypothesis.
-CLIMATE_TYPES = {
-    "extreme temperature", "heat wave", "heatwave", "cold wave",
-    "storm", "flood", "drought", "wildfire",
+# Disaster-type groups. Earthquakes / volcanoes / landslides are geological — not
+# weather — so they are NEVER included (they can't be a thermal "breakdown").
+# The config `data.disasters.types` picks which weather group to validate against:
+#   "full"        = all weather disasters (the "any weather event" test)
+#   "thermal"     = heat/cold-driven only (fairest test of a heat model)
+#   "temperature" = heat/cold waves only (the purest test)
+TYPE_GROUPS = {
+    "full":        {"extreme temperature", "heat wave", "heatwave", "cold wave",
+                    "storm", "flood", "drought", "wildfire"},
+    "thermal":     {"extreme temperature", "heat wave", "heatwave", "cold wave",
+                    "drought", "wildfire"},
+    "temperature": {"extreme temperature", "heat wave", "heatwave", "cold wave"},
 }
+CLIMATE_TYPES = TYPE_GROUPS["full"]   # default / back-compat
+
+
+def _types_for(cfg: dict) -> set:
+    """Which disaster types to keep, per config `data.disasters.types`."""
+    mode = cfg.get("data", {}).get("disasters", {}).get("types", "full")
+    return TYPE_GROUPS.get(mode, TYPE_GROUPS["full"])
 
 # ISO3 -> (lat, lon) country center points, used to ESTIMATE a location for
 # events EM-DAT only tagged by country (no precise coordinates).
@@ -113,8 +128,9 @@ def _load_disasters_gdis(cfg: dict) -> pd.DataFrame:
         raise FileNotFoundError(f"GDIS file not found at {gpath} (see docs/ROADMAP.md).")
 
     g = _read_gdis_csv(gpath)
+    types = _types_for(cfg)
     g["type"] = g["disastertype"].astype(str).str.strip()
-    g = g[g["type"].str.lower().apply(lambda t: any(k in t for k in CLIMATE_TYPES))]
+    g = g[g["type"].str.lower().apply(lambda t: any(k in t for k in types))]
     g["key"] = g["disasterno"].astype(str).str.strip()
 
     dates = _emdat_dates_by_key(epath)
@@ -190,7 +206,8 @@ def _load_disasters_emdat(cfg: dict, path: str | Path | None = None) -> pd.DataF
 
     # --- filters: need a date + SOME location; climate-relevant types ------
     out = out.dropna(subset=["lat", "lon", "date_start"])
-    mask_type = out["type"].str.lower().apply(lambda t: any(k in t for k in CLIMATE_TYPES))
+    types = _types_for(cfg)
+    mask_type = out["type"].str.lower().apply(lambda t: any(k in t for k in types))
     out = out[mask_type]
 
     # --- restrict to the configured spatial domain ---
