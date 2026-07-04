@@ -46,6 +46,9 @@ data:
     etopo_path: "data/raw/etopo.nc"
   disasters:
     source: "gdis"              # <<<<< PLAY: [gdis, emdat] >>>>>  (gdis = precise coords; emdat = country-level)
+    types: "full"               # <<<<< PLAY: [full, thermal, temperature] >>>>>  which disasters to score against
+    #   full = all weather (flood/storm/drought/wildfire/heat-cold) · thermal = heat-driven only
+    #   temperature = heat/cold waves only.  (Earthquakes/volcanoes are always excluded.)
     emdat_path: "data/raw/public_emdat_custom_request_2026-06-04_60fb1c7a-4eac-4831-b601-8ac763ee07d9.xlsx"
     gdis_path: "data/raw/pend-gdis-1960-2018-disasterlocations.csv"
     path: "data/raw/public_emdat_custom_request_2026-06-04_60fb1c7a-4eac-4831-b601-8ac763ee07d9.xlsx"  # (used by emdat-only mode)
