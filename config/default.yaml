@@ -38,7 +38,7 @@ data:
     variable: "2m_temperature"
     # Pick the ONE cloud_uri that matches resolution_deg above (uncomment one):
     cloud_uri: "gs://weatherbench2/datasets/era5/1959-2022-6h-240x121_equiangular_with_poles_conservative.zarr"   # 1.5 deg
-    # cloud_uri: "gs://weatherbench2/datasets/era5/1959-2022-6h-360x181_equiangular_with_poles_conservative.zarr" # 1.0 deg
+    # cloud_uri: "gs://weatherbench2/datasets/era5/1959-2023_01_10-6h-360x181_equiangular_with_poles_conservative.zarr" # 1.0 deg
     # cloud_uri: "gs://weatherbench2/datasets/era5/1959-2022-6h-512x256_equiangular_conservative.zarr"            # 0.703 deg
     daily_statistic: "mean"     # <<<<< PLAY: [mean, max, min] >>>>>  (max = hottest moment, best in our sweep)
     cache_dir: "data/cache"     # local cache of the downloaded data

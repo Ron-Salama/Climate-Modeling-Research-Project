@@ -26,7 +26,7 @@ from climate_capacitor.analysis import validation
 WB2 = "gs://weatherbench2/datasets/era5"
 RESOLUTIONS = [
     (1.5, f"{WB2}/1959-2022-6h-240x121_equiangular_with_poles_conservative.zarr"),
-    (1.0, f"{WB2}/1959-2022-6h-360x181_equiangular_with_poles_conservative.zarr"),
+    (1.0, f"{WB2}/1959-2023_01_10-6h-360x181_equiangular_with_poles_conservative.zarr"),
     # (0.703, f"{WB2}/1959-2022-6h-512x256_equiangular_conservative.zarr"),  # needs >=32 GB RAM
 ]
 TYPES   = ["full", "thermal", "temperature"]
