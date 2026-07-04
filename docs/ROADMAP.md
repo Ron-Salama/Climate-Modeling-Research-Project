@@ -43,10 +43,17 @@ Exploratory by design: a clean **null result is a valid scientific outcome**.
 - [x] **Phase 4 — Validation:** coverage matching + recall/precision + analytic p-value +
   precision-recall curve, split by exact/estimated. (`analysis/validation.py`,
   `scripts/run_validate.py`.) **First-config result: weak/null** (see below).
-- [~] **Phase 5 — Visualization:** field maps, predicted-vs-actual map, PR curve all done.
-  Remaining nice-to-haves: time animation, precursor-curve plots, cartopy coastlines.
+- [x] **Phase 5 — Visualization:** field maps, predicted-vs-actual map, PR curve all done.
+  Optional nice-to-haves not pursued: time animation, precursor-curve plots, cartopy coastlines.
 
-## RESULTS — first configuration (mean / linear-ε / 97.5pct / 1.5° / 100km-48h)
+> **⚠️ The results section below is the HISTORICAL first pass, and has been superseded.**
+> It records the very first configuration before the pipeline was corrected. The caveats it
+> lists (polar gradient in degrees, too-strict match radius, terrain range) were subsequently
+> fixed, and the experiments in "Next scientific steps" were carried out. For the **final,
+> corrected results and the verdict, see `PROJECT_LOG.md`** (headline: ~20% regional recall for
+> temperature disasters at the finest grid; precision ~1–2%; a valid negative result).
+
+## RESULTS — first configuration (HISTORICAL — mean / linear-ε / 97.5pct / 1.5° / 100km-48h)
 
 - Recall **0.1%**, Precision **0%**, p=0.42 → **no skill at the strict 100 km scale**.
 - Signal only emerges at coarse radius: significant (p<0.05) at **750-1000 km**, but still
@@ -54,21 +61,23 @@ Exploratory by design: a clean **null result is a valid scientific outcome**.
 - **Why (diagnostic map):** predictions concentrate on rugged terrain (Himalaya/Andes) and
   poles because low-ε amplifies the breakdown field there; real flood/storm disasters cluster
   in populated lowlands. Spatial mismatch ⇒ near-zero overlap.
-- **Caveats / artifacts to address before concluding:**
-  - Polar artifact: spatial gradient is in degrees, distorted near poles (lon lines converge).
-    Fix: compute gradient in km (cos-lat weighting) and/or mask |lat|>70.
+- **Caveats / artifacts (all since addressed — see `PROJECT_LOG.md`):**
+  - Polar artifact: spatial gradient was in degrees, distorted near poles (lon lines converge).
+    → Fixed: gradient now computed in km (cos-lat weighting) **and** poles excluded (`analysis_lat_max`).
   - 100 km match radius < one 1.5° cell (~167 km) → metric near-impossible at this resolution.
-  - ε dynamic range may be too wide (terrain dominates). Try higher eps_min.
-- **This is a legitimate exploratory result** (proposal: null results are valuable), but it's
-  ONE point in the experiment space. The knobs below remain to be swept.
+    → Addressed: evaluated at grid-appropriate radii (250 / 500 km) and finer grids.
+  - ε dynamic range may be too wide (terrain dominates). → Swept `eps_min`; terrain found to add little.
 
-## Next scientific steps (the actual experiments)
+## Next scientific steps — COMPLETED (results in `PROJECT_LOG.md`)
 
-- Fix polar gradient + retest. Try matching radius ~200-300 km (grid-appropriate).
-- Sweep `permittivity.method` (linear/log/slope/combined) and `eps_min/eps_max`.
-- Sweep `daily_statistic` (needs max/min cubes — extra pulls) + implement `"extreme"`.
-- Sweep `charge.window_days`, `decay_per_day`, breakdown `threshold_value`.
-- Validate against **heatwaves specifically** (the model is about heat) rather than all disasters.
+All of the following were carried out; findings are recorded in `PROJECT_LOG.md` (Experiments):
+
+- [x] Fixed polar gradient (km + pole exclusion) and retested at grid-appropriate radii (250/500 km).
+- [x] Swept `permittivity.method` (linear/log/slope/combined) and `eps_min/eps_max`.
+- [x] Swept `daily_statistic` (mean/max/min) — `max` slightly best.
+- [x] Swept `charge.window_days`, `decay_per_day`, breakdown `threshold_value`.
+- [x] Validated against **temperature/thermal disasters specifically** (the model's physical domain).
+- [x] Added `breakdown.field: charge | combined` (charge catches uniform heatwaves the gradient misses).
 
 ## Principles
 
@@ -77,11 +86,14 @@ Exploratory by design: a clean **null result is a valid scientific outcome**.
 - **One config, reproducible runs:** every knob in `config/default.yaml`; nothing magic in code.
 - **Auditability (NFR):** each stage logs enough to trace a breakdown back to raw inputs.
 
-## Experiments to run (decided, not yet built)
+## Experiment design notes (all since built and run — see `PROJECT_LOG.md`)
+
+Kept here for the rationale; the results live in `PROJECT_LOG.md`.
 
 - **Daily statistic: `max` vs `mean` vs `min`** — which correlates best with EM-DAT
   disasters? Controlled by `data.era5.daily_statistic` in config. `max` favors hot
-  extremes, `min` cold extremes, `mean` is balanced. To be swept automatically in Phase 4.
+  extremes, `min` cold extremes, `mean` is balanced. Swept via `scripts/run_stat_sweep.py`
+  (result: `max` slightly best; does not change the verdict).
 - **Why both hot AND cold matter:** charge is *signed* (hot = +, cold = −), and the
   breakdown field is the *gradient* of charge (‖∇Q‖/ε), so it peaks where opposite
   charges sit adjacent — like the field between a capacitor's + and − plates. A uniform
