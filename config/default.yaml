@@ -24,7 +24,7 @@ domain:
   resolution_deg: 1.5           # <<<<< PLAY: [1.5, 1.0, 0.703]  (also swap cloud_uri!) >>>>>
   # Cut high latitudes (Arctic/Antarctic): |lat| > this is dropped. Lower it to
   # remove the noisy polar predictions (few disasters live up there anyway).
-  analysis_lat_max: 66.0        # <<<<< PLAY: [66, 60, 55] >>>>>  (cut the poles more)
+  analysis_lat_max: 55.0        # <<<<< PLAY: [66, 60, 55] >>>>>  cut poles (excludes BOTH predictions & disasters beyond this; 55 = fully clean)
 
 time:
   start: "2010-01-01"
@@ -72,8 +72,13 @@ permittivity:
 
 # --- Physics: breakdown field (the "stress" map) -------------------------
 breakdown:
-  threshold_mode: "percentile"  # percentile | absolute
+  # What "stress" to flag on:
+  #   gradient = ||grad Q||/eps (hot-cold CONTRAST) · charge = |Q|/eps (accumulated
+  #   EXTREME, catches uniform heatwaves) · combined = blend of both
+  field: "gradient"             # <<<<< PLAY: [gradient, charge, combined] >>>>>
+  threshold_mode: "percentile"  # <<<<< PLAY: [percentile, absolute] >>>>>  (absolute = fixed critical value)
   threshold_value: 97.5         # <<<<< PLAY: [90, 95, 97.5, 99] >>>>>  (lower = flag MORE risk zones)
+  land_only: false              # <<<<< PLAY: [true, false] >>>>>  only flag LAND cells (disasters are logged on land)
 
 # --- Detection / clustering ----------------------------------------------
 clustering:

@@ -153,8 +153,10 @@ def _load_disasters_gdis(cfg: dict) -> pd.DataFrame:
     n0 = len(out)
     out = out.dropna(subset=["lat", "lon", "date_start"])
     d = cfg["domain"]
+    latcap = float(d.get("analysis_lat_max", 90.0))   # match the prediction region
     out = out[(out.lat >= d["lat_min"]) & (out.lat <= d["lat_max"])
-              & (out.lon >= d["lon_min"]) & (out.lon <= d["lon_max"])].reset_index(drop=True)
+              & (out.lon >= d["lon_min"]) & (out.lon <= d["lon_max"])
+              & (out.lat.abs() <= latcap)].reset_index(drop=True)
     print(f"  GDIS: {n0} climate locations -> {len(out)} in domain with dates (all exact coords)")
     return out
 
@@ -214,10 +216,12 @@ def _load_disasters_emdat(cfg: dict, path: str | Path | None = None) -> pd.DataF
     mask_type = out["type"].str.lower().apply(lambda t: any(k in t for k in types))
     out = out[mask_type]
 
-    # --- restrict to the configured spatial domain ---
+    # --- restrict to the configured spatial domain (+ analysis lat band) ---
     d = cfg["domain"]
+    latcap = float(d.get("analysis_lat_max", 90.0))   # match the prediction region
     out = out[(out.lat >= d["lat_min"]) & (out.lat <= d["lat_max"])
-              & (out.lon >= d["lon_min"]) & (out.lon <= d["lon_max"])]
+              & (out.lon >= d["lon_min"]) & (out.lon <= d["lon_max"])
+              & (out.lat.abs() <= latcap)]
     out = out.reset_index(drop=True)
 
     n_exact = int((out["geo_precision"] == "exact").sum())
