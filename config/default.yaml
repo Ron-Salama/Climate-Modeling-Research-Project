@@ -11,10 +11,10 @@ domain:
   lat_max:  90.0
   lon_min: -180.0
   lon_max:  180.0
-  # Target grid resolution in degrees.
-  #   1.5   -> 240x121 store, ~0.5 GB, laptop-safe (USE THIS on 16 GB machines).
-  #   0.703 -> 512x256 store, ~5-7 GB peak RAM -> caused BSOD on a 16 GB laptop.
-  #            Only use on a machine with >=32 GB RAM (see cloud_uri below too).
+  # Target grid resolution in degrees. Match it to the cloud_uri below.
+  #   1.5   (240x121) ~150 km · ~0.5 GB · ~2 GB RAM · laptop-safe (default)
+  #   1.0   (360x181) ~110 km · ~1 GB   · ~3 GB RAM · finer, still moderate
+  #   0.703 (512x256) ~78 km  · ~2 GB   · ~5-7 GB RAM · heavy (>=32 GB; BSOD'd a 16 GB PC)
   resolution_deg: 1.5
   # Exclude very high latitudes from the analysis: the poles have ~no disasters
   # and produce noisy gradients. |lat| > this is dropped. (Disasters max ~62 deg.)
@@ -34,10 +34,11 @@ data:
     source: "cloud"
     variable: "2m_temperature"
     # WeatherBench2 ERA5: public, 6-hourly (4 samples/day) -> cheap daily stats.
-    # ACTIVE = 1.5deg (240x121), laptop-safe. To use the ~78 km grid on a bigger
-    # machine, set resolution_deg: 0.703 above AND swap to the 512x256 URI below.
+    # ACTIVE = 1.5deg (240x121), laptop-safe. For a finer grid: change
+    # resolution_deg above AND swap cloud_uri to the matching store below.
     cloud_uri: "gs://weatherbench2/datasets/era5/1959-2022-6h-240x121_equiangular_with_poles_conservative.zarr"
-    # cloud_uri_0p7deg: "gs://weatherbench2/datasets/era5/1959-2022-6h-512x256_equiangular_conservative.zarr"
+    # 1.0 deg:  "gs://weatherbench2/datasets/era5/1959-2022-6h-360x181_equiangular_with_poles_conservative.zarr"
+    # 0.703deg: "gs://weatherbench2/datasets/era5/1959-2022-6h-512x256_equiangular_conservative.zarr"
     # Which daily statistic to keep from the sub-daily samples.
     #   mean -> robust, never flips sign (default)
     #   max  -> hot-extreme biased ;  min -> cold-extreme biased
