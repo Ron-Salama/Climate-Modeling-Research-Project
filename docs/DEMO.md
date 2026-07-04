@@ -16,16 +16,19 @@ How to show the project live, from Spyder, in one run (≈ 5 minutes).
 3. Talk over the dashboard — point at:
    - the maps: **temperature → anomaly → charge → terrain (ε) → breakdown**,
    - the **predicted-vs-actual** map (red = our predicted zones, blue = real disasters),
-   - the **numbers**: Recall ~1–3%, Precision <2% (targets were 30% / 10%),
+   - the **numbers**: on the 1.5° laptop grid, recall is a few % (it rises to **~20%** at a
+     regional 500 km scale on the finest 0.7° grid), Precision ~1–2% (targets were 30% / 10%),
    - the **daily-statistic comparison** (max is best, still far short).
 
 ## What to say
 *"We model the Earth as a capacitor — heat builds up as 'charge', terrain acts as a
 'dielectric', and a disaster is the 'breakdown' where a steep hot–cold gradient
-discharges. Running it on 10 years of real data, the predicted zones and real
-disasters mostly don't overlap — we caught only a few percent, far below our target.
-So the analogy doesn't work as a predictor. That's a clear, valid negative result:
-it shows the limits of applying this physics to climate — and it held up across every
+discharges. Running it on 10 years of real data, we found a real but weak thermal signal:
+at the finest grid it recovers up to ~20% of temperature disasters at a regional scale, and
+that signal strengthens with resolution. But the precision is ~1–2% and it can't pinpoint
+individual disasters — well below our targets. So the analogy captures broad thermal stress
+but doesn't work as a precise predictor. That's a clear, valid negative result: it maps both
+the promise and the limits of applying this physics to climate — and it held up across every
 setting we tested (terrain weighting, resolution, precise coordinates, timing)."*
 
 ## Optional extra — prove the pipeline on a test world
@@ -57,8 +60,9 @@ Notes:
 - To go back, set `resolution_deg: 1.5` and the 240x121 `cloud_uri` again.
 
 ## Likely questions (quick answers)
-- **What is Recall?** Of the real disasters, how many we caught. Ours was tiny → we missed almost all.
-- **What is Precision?** Of our alarms, how many were right. Also tiny → most were false.
+- **What is Recall?** Of the real disasters, how many we caught (within a distance + time
+  window). Regionally (500 km) it reached ~20% at the finest grid; at pinpoint scale it's tiny.
+- **What is Precision?** Of our alarms, how many were right. Small (~1–2%) → most were false.
 - **Why is a negative result okay?** The project brief says a clear negative — mapping the
   limits of a physical analogy — is as valuable as a positive one.
 - **How do you test other settings?** Change one value in `config/default.yaml` and re-run

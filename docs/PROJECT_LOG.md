@@ -1,8 +1,43 @@
 # Project Log — Design Decisions, Methodology, and Results
 
-A record of the design choices, experiments run, and findings for the Climate
-Capacitor study. Companion to `ROADMAP.md` (plan), `WALKTHROUGH.md` (what the
-project does), and `CODE_GUIDE.md` (how the code is organised).
+**This is the canonical, self-contained record of the Climate Capacitor study** — the
+theory, the method, every experiment, the final numbers, and the verdict. It is written to
+stand alone: someone (or something) reading only this file should understand the whole
+project well enough to write it up. Companion docs: `ROADMAP.md` (plan/phase history),
+`WALKTHROUGH.md` (a plain tour), and `CODE_GUIDE.md` (how the code is organised).
+
+---
+
+## The hypothesis (the analogy)
+
+The project (capstone **26-1-R-14**) tests one idea: **can extreme-weather disasters be
+predicted by modelling the Earth's surface as an electrical capacitor?** The Earth is split
+into a grid of cells, and each electrical quantity maps to a climate quantity:
+
+| Electrical | Climate quantity | Computation |
+|---|---|---|
+| Charge `Q` | Accumulated thermal anomaly | sliding-window sum of (temperature − climatology), with decay |
+| Permittivity `ε` | Terrain's resistance to discharge | `f(elevation, slope)`; smooth/flat → high ε, rugged → low ε |
+| Breakdown field `E` | Atmospheric "stress" | `E = ‖∇Q‖ / ε` per cell per day |
+| Breakdown event | Predicted extreme-weather disaster | cells where `E` exceeds a critical threshold, then clustered |
+
+**Why anomalies, not raw temperature.** The "charge" is built from temperature *anomalies*
+(each day minus that cell's day-of-year climatology, averaged over the 10 years and smoothed
+±15 days), so the model responds to *unusual* build-up rather than the fixed
+seasonal/geographic pattern (the tropics being permanently hotter than the poles is not a
+disaster signal). The anomaly is **signed** (hot = +, cold = −), and this sign is never
+discarded, because the breakdown field is a *gradient*: it peaks where opposite charges sit
+adjacent — like the field between a capacitor's + and − plates — so hot–cold *contrast*, not
+absolute heat, drives breakdown.
+
+**The central diagnostic tension** (see Key findings #3): a gradient-based breakdown responds
+to *contrasts / edges*, but many real disasters — heatwaves especially — occur at the
+*centre* of a large, near-uniform extreme, where the gradient is low. This mismatch is the
+core reason the analogy underperforms, and it is the single most important thing to carry
+forward.
+
+The project brief states explicitly that a **clear negative result is a valid scientific
+outcome** — the goal is to map the limits of the analogy, whichever way it falls.
 
 ---
 
@@ -111,6 +146,29 @@ disasters are both confined to the analysis latitude band for a fair comparison.
 | full | 4.8% | 15.4% | **1.6%** |
 
 Targets: recall > 30%, precision > 10%, p < 0.05.
+
+> **Reading the numbers honestly:** recall@500 km is a *regional* score (did we flag
+> anywhere within 500 km of the disaster) and is the "generous" headline (~20% for
+> temperature). recall@250 km and precision are the practical numbers, and they are low.
+> Pinpoint recall (100 km) is near zero. So the ~20% is real but coarse-grained.
+
+### Reproducing the headline numbers
+
+The final table above comes from the **finest grid**, poles excluded. In
+`config/default.yaml`:
+
+- `domain.resolution_deg: 0.703` **and** `data.era5.cloud_uri:` set to the matching
+  512×256 WeatherBench2 store (the commented `cloud_uri_0p7deg` line). These two must
+  change together.
+- `analysis_lat_max: 55` (excludes poles for both predictions *and* disasters).
+- `breakdown.field: gradient`, `breakdown.threshold_value: 97.5`.
+- `disasters.types: temperature` (or `thermal` / `full` for the other rows).
+- `validation`: match radius 250 km and 500 km give the two recall columns.
+- The laptop **default is 1.5°**, which gives weaker absolute numbers (a few %); it is the
+  light demo grid, not the headline. Recall rises monotonically with resolution.
+
+> ⚠️ The 0.703° grid needs ≥32 GB RAM (~5–7 GB peak). It was run once to produce these
+> numbers; the shared default stays at 1.5° so the repo runs on any laptop.
 
 ---
 

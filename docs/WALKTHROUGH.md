@@ -80,9 +80,14 @@ We didn't rely on one setting — we swept the important knobs and scored each a
 | **Match radius** | 100 / 250 / 500 / 1000 km | recall rises with a looser radius (0.2% → 8%) but stays far below target |
 | **Early-warning lookback** | 2 / 7 / 15 / 30 days | recall rises, **but p-value → 1.0** → the gain is just chance, not skill |
 | **Daily statistic** | mean / max / min | **max is best** (4.8% vs 3.5% recall @500 km — heat extremes matter most), still far below target |
-| **Resolution** | 1.5° / 1.0° / 0.7° | recall improves with resolution; 0.7° needs ≥32 GB RAM |
+| **Resolution** | 1.5° / 1.0° / 0.7° | recall improves with resolution (the strongest lever); at 0.7° temperature recall@500 km reaches **~20%**; 0.7° needs ≥32 GB RAM |
 | **Disaster coordinates** | country-centroid vs precise GDIS | precise coords gave the same weak result → not a data-quality artifact |
 | **Clustering method** | DBSCAN vs connected-components | components ~100× faster, same conclusion |
+
+> The small percentages in this table are at the **1.5° laptop default**. They are for
+> *comparing knobs* (which setting helps). Absolute recall is grid-dependent and rises to
+> **~20%** (temperature, 500 km) at the finest 0.7° grid — see the results table in
+> `PROJECT_LOG.md`.
 
 Two fixes along the way that mattered: computing the gradient in **kilometres** (not degrees)
 and **excluding the poles** — together these roughly *tripled* the apparent skill (by removing
@@ -92,11 +97,16 @@ false predictions at the edges), which is why a clean pipeline was needed before
 
 ## Part 4 — The bottom line
 
-Best honest skill: **~1–3% recall** (of real disasters caught) and **<2% precision** (of alarms
-that were right) — far below the targets of 30% and 10%. The big "significant" p-values are a
-sample-size effect, not real skill.
+**Best honest skill** (finest grid 0.7°, temperature disasters, poles excluded): the model
+recovers **up to ~20% of real events at a regional 500 km scale**, and this signal *strengthens
+with resolution* — a real, physically-consistent thermal signal. **But** precision stays around
+**1–2%**, pinpoint recall (100 km) is near zero, and recall@250 km is only ~5% — all far below
+the targets of 30% recall and 10% precision. The big "significant" p-values are a sample-size
+effect, not real skill.
 
-**Verdict: the Climate Capacitor analogy does not usefully predict real disasters.** Its
-high-stress zones and real disasters mostly sit in different places, terrain adds little, and no
-setting we tried rescued it. This is a **clear, valid negative result** — it maps the limits of
-applying electrical-capacitor physics to climate, which the project brief counts as a real contribution.
+**Verdict: the Climate Capacitor analogy identifies broad regions of thermal stress but does
+not usefully predict individual disasters.** Its high-stress zones and real disasters mostly
+sit in different places at the scale that matters, terrain adds little, and no setting we tried
+rescued precision. This is a **clear, valid negative result** — it maps both the promise (a real
+~20% regional thermal signal) and the hard limits of applying electrical-capacitor physics to
+climate, which the project brief counts as a real contribution. Full numbers: `PROJECT_LOG.md`.
