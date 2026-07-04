@@ -29,24 +29,31 @@ def gradient_magnitude(charge: xr.DataArray) -> xr.DataArray:
     but shrinks toward the poles. We convert to real kilometers with a cos(lat)
     factor on the east-west component, so the gradient is physically consistent
     everywhere (otherwise high-latitude cells get spurious huge gradients)."""
-    lat = charge["lat"].values
-    lon = charge["lon"].values
+    # float32 coords -> np.gradient stays float32 (avoids a float64 memory spike)
+    lat = charge["lat"].values.astype(np.float32)
+    lon = charge["lon"].values.astype(np.float32)
     lat_axis = charge.get_axis_num("lat")
     lon_axis = charge.get_axis_num("lon")
+    vals = np.asarray(charge.values, dtype=np.float32)
 
-    gy_deg = np.gradient(charge.values, lat, axis=lat_axis)   # per degree latitude
-    gx_deg = np.gradient(charge.values, lon, axis=lon_axis)   # per degree longitude
+    gy = np.gradient(vals, lat, axis=lat_axis)   # per degree latitude  (float32)
+    gx = np.gradient(vals, lon, axis=lon_axis)   # per degree longitude (float32)
 
-    # Convert degrees -> kilometers. cos(lat) shrinks E-W spacing toward poles.
-    coslat = np.clip(np.cos(np.radians(lat)), 0.01, None)
+    # Convert degrees -> km. cos(lat) shrinks E-W spacing toward the poles.
+    coslat = np.clip(np.cos(np.radians(lat)), 0.01, None).astype(np.float32)
     shape = [1] * charge.ndim
     shape[lat_axis] = len(lat)
-    coslat_b = coslat.reshape(shape)                          # broadcast along lat
+    coslat_b = coslat.reshape(shape)
 
-    gy_km = gy_deg / KM_PER_DEG
-    gx_km = gx_deg / (KM_PER_DEG * coslat_b)
-    mag = np.sqrt(gx_km**2 + gy_km**2)
-    out = charge.copy(data=mag)
+    # magnitude = sqrt(gx_km^2 + gy_km^2), done in-place to minimise peak memory
+    gy /= KM_PER_DEG
+    gx /= (KM_PER_DEG * coslat_b)
+    gx *= gx
+    gy *= gy
+    gx += gy
+    del gy
+    np.sqrt(gx, out=gx)
+    out = charge.copy(data=gx)
     out.name = "charge_gradient"
     return out
 
@@ -54,7 +61,7 @@ def gradient_magnitude(charge: xr.DataArray) -> xr.DataArray:
 def breakdown_field(charge: xr.DataArray, epsilon: xr.DataArray) -> xr.DataArray:
     """E = ||grad Q|| / epsilon, broadcasting epsilon(lat,lon) over time."""
     grad = gradient_magnitude(charge)
-    eps = epsilon.clip(min=1e-6)  # guard against divide-by-zero
+    eps = epsilon.clip(min=1e-6).astype("float32")  # guard div-by-zero + keep float32
     E = grad / eps
     E.name = "breakdown_field"
     E.attrs["long_name"] = "breakdown field (atmospheric stress)"
