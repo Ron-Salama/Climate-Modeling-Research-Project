@@ -79,8 +79,8 @@ Everything is in one file: **`config/default.yaml`**. To test a different scenar
 
 ## If something goes wrong
 
-- **Computer freezes / crashes** → you're on the heavy fine grid. Set `resolution_deg`
-  back to `1.5` in the config and close other apps.
+- **Computer slows down / runs out of memory** → you're on a fine grid. Set `resolution_deg`
+  back to `1.5` in the config and close other applications.
 - **"file not found" for disasters** → you still need to download the disaster data
   (see **SETUP.md**).
 - **First run is slow** → that's the one-time data download; later runs are fast.
