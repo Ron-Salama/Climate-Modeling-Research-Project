@@ -86,6 +86,24 @@ def _emdat_dates_by_key(emdat_path: Path) -> pd.DataFrame:
     return out
 
 
+def _read_gdis_csv(path: Path) -> pd.DataFrame:
+    """Read the GDIS CSV robustly.
+
+    The file can arrive with different delimiters/encodings if it was opened and
+    re-saved in Excel (comma vs semicolon vs tab; utf-8 with/without BOM). Try
+    sensible combinations and return the first that has the expected columns."""
+    for enc in ("utf-8-sig", "latin-1"):
+        for sep in (",", ";", "\t"):
+            try:
+                g = pd.read_csv(path, encoding=enc, sep=sep)
+            except Exception:
+                continue
+            if "disastertype" in g.columns and "latitude" in g.columns:
+                return g
+    # last resort: let pandas sniff the separator
+    return pd.read_csv(path, encoding="latin-1", sep=None, engine="python")
+
+
 def _load_disasters_gdis(cfg: dict) -> pd.DataFrame:
     """GDIS precise locations joined to EM-DAT dates on disaster number."""
     dc = cfg["data"]["disasters"]
@@ -94,7 +112,7 @@ def _load_disasters_gdis(cfg: dict) -> pd.DataFrame:
     if not gpath.exists():
         raise FileNotFoundError(f"GDIS file not found at {gpath} (see docs/ROADMAP.md).")
 
-    g = pd.read_csv(gpath, encoding="latin-1")
+    g = _read_gdis_csv(gpath)
     g["type"] = g["disastertype"].astype(str).str.strip()
     g = g[g["type"].str.lower().apply(lambda t: any(k in t for k in CLIMATE_TYPES))]
     g["key"] = g["disasterno"].astype(str).str.strip()
