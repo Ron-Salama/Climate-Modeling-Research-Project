@@ -41,7 +41,7 @@ def main() -> None:
         cfg["domain"]["resolution_deg"] = res_deg
         cfg["data"]["era5"]["cloud_uri"] = uri
         print(f"\n### RESOLUTION {res_deg} deg — running pipeline (downloads once if new) ...")
-        res = run_pipeline(cfg, verbose=True, keep_temp=False)
+        res = run_pipeline(cfg, verbose=True, keep_temp=False, keep_anom=False)
         catalog = res["catalog"]
 
         for typ in TYPES:

@@ -14,11 +14,13 @@ from .physics import anomaly, breakdown, charge, permittivity
 from .analysis import clustering, events
 
 
-def run_pipeline(cfg: dict, verbose: bool = True, keep_temp: bool = True):
+def run_pipeline(cfg: dict, verbose: bool = True, keep_temp: bool = True, keep_anom: bool = True):
     """Run the whole chain and return a dict of results.
 
-    keep_temp=False frees the temperature cube once anomalies are computed
-    (saves ~1 array of RAM) -- use it when the caller won't plot temperature."""
+    keep_temp=False frees the temperature cube once anomalies are computed;
+    keep_anom=False also frees the anomaly cube once charge is computed. Use both
+    (e.g. in sweeps) when the caller only needs the event catalog -- saves ~2
+    array-cubes of RAM, which matters at finer grids."""
     def say(*a):
         if verbose:
             print(*a)
@@ -34,6 +36,8 @@ def run_pipeline(cfg: dict, verbose: bool = True, keep_temp: bool = True):
     if not keep_temp:
         temp = None                      # free ~1 cube of RAM (caller won't plot it)
     Q = charge.accumulate_charge(anom, cfg["charge"]["window_days"], cfg["charge"]["decay_per_day"])
+    if not keep_anom:
+        anom = None                      # free ~1 cube of RAM (caller won't plot anomaly)
 
     say("[4/6] permittivity -> breakdown field ...")
     eps = permittivity.compute_permittivity(topo["elevation"], topo["slope"], cfg["permittivity"])

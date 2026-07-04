@@ -37,7 +37,9 @@ def accumulate_charge(
     # Causal FIR: y[t] = sum_k kernel[k] * x[t-k]. NaNs are treated as 0 so
     # short gaps don't blow up the accumulation (logged upstream in Phase 2).
     data = np.nan_to_num(anomaly.values, nan=0.0)
-    charged = lfilter(kernel, [1.0], data, axis=axis)
+    # lfilter upcasts to float64; cast back to float32 to halve memory (matters
+    # at finer grids where a single cube is ~1 GB).
+    charged = lfilter(kernel, [1.0], data, axis=axis).astype(np.float32, copy=False)
     out = anomaly.copy(data=charged)
     out.name = "charge"
     out.attrs["long_name"] = "accumulated thermal charge"
