@@ -2,6 +2,11 @@
 # Climate Capacitor — default configuration
 # Every tunable knob lives here so experiments are reproducible and the
 # topography->permittivity parameterization can be swapped without code edits.
+# ----------------------------------------------------------------------------
+# HOW TO EXPERIMENT:  find the lines marked   <<<<< PLAY: [options] >>>>>
+#   1) change ONE value to one of the options in the [ ] brackets
+#   2) save this file
+#   3) re-run a script (e.g. scripts/run_all.py) and compare the results
 # ============================================================================
 
 # --- Spatial / temporal domain -------------------------------------------
@@ -11,91 +16,72 @@ domain:
   lat_max:  90.0
   lon_min: -180.0
   lon_max:  180.0
-  # Target grid resolution in degrees. Match it to the cloud_uri below.
-  #   1.5   (240x121) ~150 km · ~0.5 GB · ~2 GB RAM · laptop-safe (default)
-  #   1.0   (360x181) ~110 km · ~1 GB   · ~3 GB RAM · finer, still moderate
-  #   0.703 (512x256) ~78 km  · ~2 GB   · ~5-7 GB RAM · heavy (>=32 GB; BSOD'd a 16 GB PC)
-  resolution_deg: 1.5
-  # Exclude very high latitudes from the analysis: the poles have ~no disasters
-  # and produce noisy gradients. |lat| > this is dropped. (Disasters max ~62 deg.)
+  # Grid resolution. IMPORTANT: if you change this you must ALSO swap cloud_uri
+  # (below) to the matching store. Detail vs RAM:
+  #   1.5   (240x121) ~150 km · ~2 GB RAM · laptop-safe (default)
+  #   1.0   (360x181) ~110 km · ~3 GB RAM · finer, still moderate
+  #   0.703 (512x256) ~78 km  · ~5-7 GB RAM · heavy (needs >=32 GB; BSOD'd a 16 GB PC)
+  resolution_deg: 1.5           # <<<<< PLAY: [1.5, 1.0, 0.703]  (also swap cloud_uri!) >>>>>
+  # Exclude very high latitudes (poles have ~no disasters, noisy gradients).
   analysis_lat_max: 66.0
 
 time:
   start: "2010-01-01"
   end:   "2019-12-31"
-  # Time-split validation: fraction of the period used for calibration.
-  train_fraction: 0.65          # ~6.5 yr train, ~3.5 yr validate
+  train_fraction: 0.65          # ~6.5 yr train, ~3.5 yr validate (time-split)
 
 # --- Data sources ---------------------------------------------------------
 data:
   era5:
-    # "cloud" = stream ARCO-ERA5 from GCS (no bulk download).
-    # "cds"   = download via Copernicus cdsapi (needs ~/.cdsapirc).
     source: "cloud"
     variable: "2m_temperature"
-    # WeatherBench2 ERA5: public, 6-hourly (4 samples/day) -> cheap daily stats.
-    # ACTIVE = 1.5deg (240x121), laptop-safe. For a finer grid: change
-    # resolution_deg above AND swap cloud_uri to the matching store below.
-    cloud_uri: "gs://weatherbench2/datasets/era5/1959-2022-6h-240x121_equiangular_with_poles_conservative.zarr"
-    # 1.0 deg:  "gs://weatherbench2/datasets/era5/1959-2022-6h-360x181_equiangular_with_poles_conservative.zarr"
-    # 0.703deg: "gs://weatherbench2/datasets/era5/1959-2022-6h-512x256_equiangular_conservative.zarr"
-    # Which daily statistic to keep from the sub-daily samples.
-    #   mean -> robust, never flips sign (default)
-    #   max  -> hot-extreme biased ;  min -> cold-extreme biased
-    # ("extreme" = most-anomalous-moment is a Phase-4 experiment: it needs the
-    #  anomaly step, so it's applied after climatology, not here at load time.)
-    daily_statistic: "mean"       # max | min | mean
-    cache_dir: "data/cache"       # local cache of the regridded daily subset
+    # Pick the ONE cloud_uri that matches resolution_deg above (uncomment one):
+    cloud_uri: "gs://weatherbench2/datasets/era5/1959-2022-6h-240x121_equiangular_with_poles_conservative.zarr"   # 1.5 deg
+    # cloud_uri: "gs://weatherbench2/datasets/era5/1959-2022-6h-360x181_equiangular_with_poles_conservative.zarr" # 1.0 deg
+    # cloud_uri: "gs://weatherbench2/datasets/era5/1959-2022-6h-512x256_equiangular_conservative.zarr"            # 0.703 deg
+    daily_statistic: "mean"     # <<<<< PLAY: [mean, max, min] >>>>>  (max = hottest moment, best in our sweep)
+    cache_dir: "data/cache"     # local cache of the downloaded data
   topography:
-    # Terrain is derived from the SAME WeatherBench2 store (surface geopotential),
-    # so it's perfectly grid-aligned with temperature and needs no extra download.
-    source: "weatherbench2"
-    etopo_path: "data/raw/etopo.nc"  # alternative hi-res source, only if ever needed
+    source: "weatherbench2"     # terrain comes from the same store (no extra download)
+    etopo_path: "data/raw/etopo.nc"
   disasters:
-    # "gdis"  = GDIS precise coordinates joined to EM-DAT dates (best; all exact).
-    # "emdat" = EM-DAT only, with country-centroid fallback for missing coords.
-    source: "gdis"
+    source: "gdis"              # <<<<< PLAY: [gdis, emdat] >>>>>  (gdis = precise coords; emdat = country-level)
     emdat_path: "data/raw/public_emdat_custom_request_2026-06-04_60fb1c7a-4eac-4831-b601-8ac763ee07d9.xlsx"
     gdis_path: "data/raw/pend-gdis-1960-2018-disasterlocations.csv"
-    # Back-compat alias for the EM-DAT-only path used by the older loader.
-    path: "data/raw/public_emdat_custom_request_2026-06-04_60fb1c7a-4eac-4831-b601-8ac763ee07d9.xlsx"
+    path: "data/raw/public_emdat_custom_request_2026-06-04_60fb1c7a-4eac-4831-b601-8ac763ee07d9.xlsx"  # (used by emdat-only mode)
 
-# --- Physics: thermal charge ---------------------------------------------
+# --- Physics: thermal charge (how heat builds up over time) --------------
 charge:
-  window_days: 30               # sliding-window integration length
-  decay_per_day: 0.02           # energy dissipation factor (0 = no decay)
-  climatology_smooth_days: 15   # smoothing of the day-of-year climatology
+  window_days: 30               # <<<<< PLAY: [15, 30, 60, 90] >>>>>  (days of heat build-up)
+  decay_per_day: 0.02           # <<<<< PLAY: [0.0, 0.02, 0.05, 0.1] >>>>>  (how fast old heat leaks away)
+  climatology_smooth_days: 15   # smoothing of the day-of-year "normal"
 
-# --- Physics: permittivity (topography -> epsilon) -----------------------
-# `method` selects a registered parameterization in physics/permittivity.py.
-# Swap this string to run a different terrain model; params feed that method.
+# --- Physics: permittivity (terrain -> resistance epsilon) ---------------
 permittivity:
-  method: "linear"              # linear | log | slope | combined
-  eps_min: 0.5                  # rugged terrain (best of the 1.5deg sweep: 0.4-0.6)
-  eps_max: 1.0                  # smooth terrain / ocean (high permittivity)
+  method: "linear"              # <<<<< PLAY: [linear, log, slope, combined] >>>>>  (terrain formula)
+  eps_min: 0.5                  # <<<<< PLAY: [0.2, 0.4, 0.5, 0.6, 0.7] >>>>>  (how much terrain matters)
+  eps_max: 1.0                  # smooth terrain / ocean (leave at 1.0)
   params:
-    elevation_ref_m: 4000.0     # elevation at which eps approaches eps_min
-    slope_weight: 0.5           # weight of slope vs elevation in "combined"
+    elevation_ref_m: 4000.0     # elevation where eps reaches eps_min
+    slope_weight: 0.5           # slope vs elevation weight (only for "combined")
 
-# --- Physics: breakdown field --------------------------------------------
+# --- Physics: breakdown field (the "stress" map) -------------------------
 breakdown:
-  # Critical threshold for flagging a cell. "percentile" adapts to the data;
-  # "absolute" uses a fixed value of the breakdown field.
-  threshold_mode: "percentile"
-  threshold_value: 97.5         # if percentile: top 2.5% of cells flagged
+  threshold_mode: "percentile"  # percentile | absolute
+  threshold_value: 97.5         # <<<<< PLAY: [90, 95, 97.5, 99] >>>>>  (lower = flag MORE risk zones)
 
 # --- Detection / clustering ----------------------------------------------
 clustering:
-  algorithm: "components"       # components (fast connected-components) | dbscan (original, slower)
-  dbscan_eps_cells: 2.0         # neighborhood radius in grid cells (spatial)
+  algorithm: "components"       # <<<<< PLAY: [components, dbscan] >>>>>  (components = fast)
+  dbscan_eps_cells: 2.0         # neighborhood radius in grid cells
   dbscan_min_samples: 5         # min flagged cells to form a blob
   link_radius_km: 300.0         # link day-to-day blobs within this distance into one event
 
-# --- Validation against EM-DAT -------------------------------------------
+# --- Validation against the disaster records -----------------------------
 validation:
-  spatial_radius_km: 100.0
-  temporal_window_hours: 48
-  success:
+  spatial_radius_km: 100.0      # <<<<< PLAY: [100, 250, 500] >>>>>  (how close counts as a "hit")
+  temporal_window_hours: 48     # <<<<< PLAY: [48, 168, 360, 720] >>>>>  (hours; 48h..30d early-warning window)
+  success:                      # the project's target thresholds (for reference; don't need to change)
     min_recall: 0.30
     min_precision: 0.10
     max_pvalue: 0.05
