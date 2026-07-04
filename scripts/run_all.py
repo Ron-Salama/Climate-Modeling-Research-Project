@@ -82,6 +82,16 @@ def main() -> None:
     cat_full = validation.apply_budget(cat_full, len(dis), cfg)
     cat = cat_full[cat_full["active"]]           # score only the active predictions
 
+    if len(cat) == 0:
+        banner("NO PREDICTIONS TO SCORE")
+        print(f"  total events: {len(cat_full)}   disasters: {len(dis)}   "
+              f"max_predictions: {cfg['validation'].get('max_predictions', 'all')}")
+        print("  Nothing active to validate/plot. Likely causes:")
+        print("   - the pipeline produced 0 events at this config, or")
+        print("   - max_predictions='match' with 0 disasters in the window/type.")
+        print("  Check config/default.yaml (resolution+cloud_uri match? valid types? threshold?).")
+        return
+
     # ---- event catalog summary ----
     banner("PREDICTED EVENTS")
     print(f"  total predicted events : {len(cat_full)}   "
