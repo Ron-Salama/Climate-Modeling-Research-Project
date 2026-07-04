@@ -64,6 +64,10 @@ def apply_budget(catalog: pd.DataFrame, n_disasters: int, cfg: dict) -> pd.DataF
       <int>   -> keep that many
     Returns the FULL catalog (sorted by peak_E) with a boolean 'active' column,
     so ghosts are still saved/tracked in the output."""
+    if catalog is None or len(catalog) == 0 or "peak_E" not in catalog.columns:
+        out = catalog.copy() if catalog is not None else pd.DataFrame(columns=["peak_E"])
+        out["active"] = pd.Series([], dtype=bool) if len(out) == 0 else False
+        return out
     mp = cfg.get("validation", {}).get("max_predictions", "all")
     cat = catalog.sort_values("peak_E", ascending=False).reset_index(drop=True)
     if mp == "all":

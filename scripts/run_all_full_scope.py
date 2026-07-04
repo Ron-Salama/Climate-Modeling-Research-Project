@@ -43,6 +43,13 @@ def main() -> None:
         print(f"\n### RESOLUTION {res_deg} deg — running pipeline (downloads once if new) ...")
         res = run_pipeline(cfg, verbose=True, keep_temp=False, keep_anom=False)
         catalog = res["catalog"]
+        print(f"    -> {len(catalog)} predicted events at {res_deg} deg")
+        if len(catalog) == 0:
+            print(f"    !! NO events at {res_deg} deg — skipping (data/pipeline issue here)")
+            rows.append({"res": res_deg, "type": "(none)", "budget": "-", "active_preds": 0,
+                         "disasters": 0, "recall_100": 0, "recall_250": 0, "recall_500": 0,
+                         "prec_250": 0, "p_250": 1.0})
+            continue
 
         for typ in TYPES:
             cfg["data"]["disasters"]["types"] = typ
