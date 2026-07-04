@@ -73,14 +73,19 @@ def main() -> None:
           f"charge window: {cfg['charge']['window_days']}d decay {cfg['charge']['decay_per_day']}")
 
     res = run_pipeline(cfg, verbose=True, keep_temp=False)  # run_all doesn't plot temperature
-    cat = res["catalog"]
+    cat_full = res["catalog"]
 
     dis = load_disasters(cfg)
     dis = dis[(dis.date_start >= cfg["time"]["start"]) & (dis.date_start <= cfg["time"]["end"])]
 
+    # ---- prediction budget: keep top-N strongest 'active', rest are ghosts ----
+    cat_full = validation.apply_budget(cat_full, len(dis), cfg)
+    cat = cat_full[cat_full["active"]]           # score only the active predictions
+
     # ---- event catalog summary ----
     banner("PREDICTED EVENTS")
-    print(f"  total predicted events : {len(cat)}")
+    print(f"  total predicted events : {len(cat_full)}   "
+          f"(active: {len(cat)}, ghosts: {len(cat_full)-len(cat)})")
     print(f"  heat-driven / terrain  : {(cat.trigger=='heat-driven').sum()}"
           f" / {(cat.trigger=='terrain-driven').sum()}")
     print("\n  strongest 10 (by peak stress):")
@@ -155,9 +160,9 @@ def main() -> None:
         plt.show()
     plt.close(fig)
 
-    # ---- save text summary + catalog ----
+    # ---- save text summary + catalog (full, incl. ghost predictions) ----
     (outdir / "summary.txt").write_text(summary, encoding="utf-8")
-    cat.to_csv(outdir / "predicted_events.csv", index=False)
+    cat_full.to_csv(outdir / "predicted_events.csv", index=False)  # 'active' column marks ghosts
 
     banner("DONE")
     print(f"  dashboard : {dash}")

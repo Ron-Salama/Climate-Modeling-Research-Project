@@ -22,8 +22,9 @@ domain:
   #   1.0   (360x181) ~110 km · ~3 GB RAM · finer, still moderate
   #   0.703 (512x256) ~78 km  · ~5-7 GB RAM · heavy (needs >=32 GB; BSOD'd a 16 GB PC)
   resolution_deg: 1.5           # <<<<< PLAY: [1.5, 1.0, 0.703]  (also swap cloud_uri!) >>>>>
-  # Exclude very high latitudes (poles have ~no disasters, noisy gradients).
-  analysis_lat_max: 66.0
+  # Cut high latitudes (Arctic/Antarctic): |lat| > this is dropped. Lower it to
+  # remove the noisy polar predictions (few disasters live up there anyway).
+  analysis_lat_max: 66.0        # <<<<< PLAY: [66, 60, 55] >>>>>  (cut the poles more)
 
 time:
   start: "2010-01-01"
@@ -49,6 +50,7 @@ data:
     types: "full"               # <<<<< PLAY: [full, thermal, temperature] >>>>>  which disasters to score against
     #   full = all weather (flood/storm/drought/wildfire/heat-cold) · thermal = heat-driven only
     #   temperature = heat/cold waves only.  (Earthquakes/volcanoes are always excluded.)
+    #   OR isolate specific types with a list, e.g.:  types: ["extreme temperature", "flood"]
     emdat_path: "data/raw/public_emdat_custom_request_2026-06-04_60fb1c7a-4eac-4831-b601-8ac763ee07d9.xlsx"
     gdis_path: "data/raw/pend-gdis-1960-2018-disasterlocations.csv"
     path: "data/raw/public_emdat_custom_request_2026-06-04_60fb1c7a-4eac-4831-b601-8ac763ee07d9.xlsx"  # (used by emdat-only mode)
@@ -82,6 +84,10 @@ clustering:
 
 # --- Validation against the disaster records -----------------------------
 validation:
+  # Operating point: keep only the strongest predictions (ghosts still saved to CSV).
+  # NOTE: "all" is best — "match" keeps the strongest by peak_E, but those align WORST
+  # with disasters (strength != correctness), so it LOWERS recall. Kept as an option.
+  max_predictions: "all"        # <<<<< PLAY: [all, match, 2000] >>>>>  (leave "all" for best results)
   spatial_radius_km: 100.0      # <<<<< PLAY: [100, 250, 500] >>>>>  (how close counts as a "hit")
   temporal_window_hours: 48     # <<<<< PLAY: [48, 168, 360, 720] >>>>>  (hours; 48h..30d early-warning window)
   success:                      # the project's target thresholds (for reference; don't need to change)

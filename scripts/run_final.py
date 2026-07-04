@@ -39,10 +39,12 @@ def main() -> None:
     cfg = load_config()
     print(f"=== FINAL RUN @ {cfg['domain']['resolution_deg']} deg, eps_min {cfg['permittivity']['eps_min']} ===")
     res = run_pipeline(cfg, verbose=True, keep_temp=False)
-    cat = res["catalog"]
+    cat_full = res["catalog"]
     dis = load_disasters(cfg)
     dis = dis[(dis.date_start >= cfg["time"]["start"]) & (dis.date_start <= cfg["time"]["end"])]
-    print(f"\npredicted events: {len(cat)}   disaster-locations: {len(dis)}")
+    cat_full = validation.apply_budget(cat_full, len(dis), cfg)   # top-N active, rest ghosts
+    cat = cat_full[cat_full["active"]]
+    print(f"\npredicted events: {len(cat_full)} (active {len(cat)})   disaster-locations: {len(dis)}")
 
     # --- recall% grid (rows = radius, cols = lookback) ---
     print("\nRECALL %  (rows = match radius km, cols = lookback days)")
@@ -79,7 +81,7 @@ def main() -> None:
 
     outdir = REPO / cfg["run"]["output_dir"] / "final"
     outdir.mkdir(parents=True, exist_ok=True)
-    cat.to_csv(outdir / "predicted_events_0p7.csv", index=False)
+    cat_full.to_csv(outdir / "predicted_events_0p7.csv", index=False)  # incl. ghosts ('active' col)
     print(f"\ncatalog -> {outdir / 'predicted_events_0p7.csv'}")
 
 

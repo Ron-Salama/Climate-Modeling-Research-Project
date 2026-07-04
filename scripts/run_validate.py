@@ -40,6 +40,11 @@ def main() -> None:
     # restrict disasters to the analysis time window
     dis = dis[(dis.date_start >= cfg["time"]["start"]) & (dis.date_start <= cfg["time"]["end"])]
 
+    # prediction budget: keep top-N strongest 'active', rest are ghosts
+    cat = validation.apply_budget(cat, len(dis), cfg)
+    cat = cat[cat["active"]]
+    print(f"active predictions scored: {len(cat)}")
+
     r = validation.validate(cat, dis, cfg)
     validation.print_report(r, cfg)
 
