@@ -35,9 +35,13 @@ CLIMATE_TYPES = TYPE_GROUPS["full"]   # default / back-compat
 
 
 def _types_for(cfg: dict) -> set:
-    """Which disaster types to keep, per config `data.disasters.types`."""
-    mode = cfg.get("data", {}).get("disasters", {}).get("types", "full")
-    return TYPE_GROUPS.get(mode, TYPE_GROUPS["full"])
+    """Which disaster types to keep, per config `data.disasters.types`.
+    Accepts a preset name ("full"/"thermal"/"temperature") OR a custom list,
+    e.g.  types: ["extreme temperature", "flood"]  to isolate specific types."""
+    v = cfg.get("data", {}).get("disasters", {}).get("types", "full")
+    if isinstance(v, (list, tuple)):
+        return {str(x).lower().strip() for x in v}
+    return TYPE_GROUPS.get(v, TYPE_GROUPS["full"])
 
 # ISO3 -> (lat, lon) country center points, used to ESTIMATE a location for
 # events EM-DAT only tagged by country (no precise coordinates).

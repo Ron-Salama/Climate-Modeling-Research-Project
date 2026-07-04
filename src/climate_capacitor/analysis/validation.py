@@ -55,6 +55,29 @@ def _coverage(catalog: pd.DataFrame, dis: pd.DataFrame, radius_km: float,
     return cover
 
 
+def apply_budget(catalog: pd.DataFrame, n_disasters: int, cfg: dict) -> pd.DataFrame:
+    """Mark the top-N strongest predictions 'active'; the rest are 'ghosts'.
+
+    N is set by cfg['validation']['max_predictions']:
+      "all"   -> every prediction is active (no budget)
+      "match" -> keep as many as there are disasters (a balanced operating point)
+      <int>   -> keep that many
+    Returns the FULL catalog (sorted by peak_E) with a boolean 'active' column,
+    so ghosts are still saved/tracked in the output."""
+    mp = cfg.get("validation", {}).get("max_predictions", "all")
+    cat = catalog.sort_values("peak_E", ascending=False).reset_index(drop=True)
+    if mp == "all":
+        n = len(cat)
+    elif mp == "match":
+        n = min(len(cat), int(n_disasters))
+    else:
+        n = min(len(cat), int(mp))
+    cat["active"] = False
+    if n > 0:
+        cat.loc[: n - 1, "active"] = True
+    return cat
+
+
 def validate(catalog: pd.DataFrame, dis: pd.DataFrame, cfg: dict, radius_km: float | None = None,
              lookback_days: float | None = None, lookahead_days: float | None = None):
     """Compute recall/precision/p-value (overall + by geo_precision).
