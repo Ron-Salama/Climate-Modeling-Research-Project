@@ -289,6 +289,24 @@ config switch (resolution_deg + cloud_uri) for a bigger machine / the project pa
 
 ---
 
+## Root cause of the failure (from sanity checks)
+
+`scripts/sanity_check.py` + `scripts/diagnose_russia.py` ruled out bugs and found the WHY:
+- **Coordinates & matching are correct** (no lat/lon swap; a 56 km prediction-disaster pair scores
+  as a hit). So the negative result is not a data/matching error.
+- **The 2010 Russian heatwave IS in the data** (Moscow anomaly +9.5 K, charge +163) **but was not
+  flagged**: its breakdown E = 0.100 < threshold 0.147 (only the 85th percentile). Reason:
+  `breakdown = ‖∇Q‖/ε` is a **gradient** — a *uniform* hot blob has high charge but LOW gradient,
+  so a heatwave is nearly invisible to the model.
+- **~48% of predictions land at |lat|>60** (empty Arctic): high-latitude regions have large
+  temperature variance → large charge gradients that the model flags, but few disasters are logged there.
+- **Conclusion:** the capacitor "breakdown = gradient" targets **contrasts** (hot-cold edges), while
+  disasters occur at the **center of extremes** (low gradient). Predictions (edges) and disasters
+  (centers) don't overlap — that spatial mismatch is the specific reason for the low recall/precision.
+  It's a conceptual limitation of the analogy, not a bug.
+- A charge-**level** predictor (flag high |Q|) would catch heatwaves, but that abandons the capacitor
+  breakdown/field mechanism — it's a different model, not this analogy.
+
 ## FINAL VERDICT & CONCLUSIONS
 
 **The question:** does the "Climate Capacitor" analogy — heat builds up like electric charge,
