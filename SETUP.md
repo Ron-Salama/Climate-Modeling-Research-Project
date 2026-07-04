@@ -55,5 +55,5 @@ in `config/default.yaml` set:
 - `domain.resolution_deg: 0.703`
 - `data.era5.cloud_uri:` the 512x256 store (the commented `cloud_uri_0p7deg` line)
 
-> ⚠️ 0.7° peaks at ~5–7 GB RAM and caused a **blue-screen on a 16 GB laptop**. Only run it
-> on a machine with plenty of RAM. Even finer (0.25°) needs much more.
+> ⚠️ 0.7° peaks at ~5–7 GB RAM (**≥ 32 GB recommended**). Only run it on a large-memory
+> machine. Even finer (0.25°) needs considerably more.

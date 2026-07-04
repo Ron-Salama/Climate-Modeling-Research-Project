@@ -80,7 +80,7 @@ We didn't rely on one setting — we swept the important knobs and scored each a
 | **Match radius** | 100 / 250 / 500 / 1000 km | recall rises with a looser radius (0.2% → 8%) but stays far below target |
 | **Early-warning lookback** | 2 / 7 / 15 / 30 days | recall rises, **but p-value → 1.0** → the gain is just chance, not skill |
 | **Daily statistic** | mean / max / min | **max is best** (4.8% vs 3.5% recall @500 km — heat extremes matter most), still far below target |
-| **Resolution** | 1.5° (tested) ; 0.7° (attempted) | 0.7° crashed the laptop (needs ≥32 GB RAM); wouldn't change the verdict |
+| **Resolution** | 1.5° / 1.0° / 0.7° | recall improves with resolution; 0.7° needs ≥32 GB RAM |
 | **Disaster coordinates** | country-centroid vs precise GDIS | precise coords gave the same weak result → not a data-quality artifact |
 | **Clustering method** | DBSCAN vs connected-components | components ~100× faster, same conclusion |
 

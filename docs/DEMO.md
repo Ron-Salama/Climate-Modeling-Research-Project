@@ -52,8 +52,8 @@ to a matching pair, then run `run_all.py`:
 Notes:
 - The finer grid's **first run re-downloads** (~1 GB for 1.0°, ~2 GB for 0.7°) into a new cache;
   after that it's reused.
-- **If the machine starts to freeze/swap, stop the run** (the Stop button in Spyder, or Ctrl+C)
-  and go back to `1.5`. The 0.7° grid blue-screened a 16 GB PC — only try it with lots of RAM.
+- **If the machine slows down (memory pressure), stop the run** (Stop button in Spyder, or Ctrl+C)
+  and go back to `1.5`. The 0.7° grid needs ≥ 32 GB RAM — only run it on a large-memory machine.
 - To go back, set `resolution_deg: 1.5` and the 240x121 `cloud_uri` again.
 
 ## Likely questions (quick answers)
