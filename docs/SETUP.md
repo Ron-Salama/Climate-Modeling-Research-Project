@@ -1,7 +1,7 @@
 # Setup — Climate Capacitor
 
-How to go from a fresh clone to running the analysis. (See `docs/ROADMAP.md` for the
-plan and `docs/PROJECT_LOG.md` for what we tried + the final verdict.)
+How to go from a fresh clone to running the analysis. (See `ROADMAP.md` for the
+plan and `PROJECT_LOG.md` for what we tried + the final verdict.)
 
 ## 1. Get the code
 ```bash
