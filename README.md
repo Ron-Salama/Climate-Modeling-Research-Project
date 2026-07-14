@@ -10,6 +10,10 @@ modelled as a dielectric **breakdown** — a cell where the breakdown field `E =
 Predicted breakdown zones are then validated statistically against a real disaster database
 (EM-DAT + GDIS).
 
+> **Start here** — **Reviewers:** the [Phase B Project Book](submission/Project_Book_Phase_B_26-1-R-14.docx)
+> is the main read (its **Appendix A is the User Guide**, Appendix B the Maintenance Guide).
+> **Running it:** [docs/SETUP.md](docs/SETUP.md) to install → [docs/USER_MANUAL.md](docs/USER_MANUAL.md) to run.
+
 ## The finding (short version)
 
 The analogy captures a **real but weak thermal signal**. At the finest grid tested (0.703°),
@@ -23,17 +27,41 @@ stress, but not the specific location or timing of individual disasters.
 of applying electrostatic physics to climate, which the project brief counts as a genuine
 contribution. Full numbers, decisions, and diagnostics are in **[docs/PROJECT_LOG.md](docs/PROJECT_LOG.md)**.
 
-## Where to look
+## Submission deliverables
+
+The graded deliverables live in **[`submission/`](submission/)**:
+
+| Deliverable | File |
+|---|---|
+| Project Book — Phase B | **[submission/Project_Book_Phase_B_26-1-R-14.docx](submission/Project_Book_Phase_B_26-1-R-14.docx)** |
+| Project Book — Phase A | **[submission/Project_Book_Phase_A_26-1-R-14.docx](submission/Project_Book_Phase_A_26-1-R-14.docx)** |
+| Poster (A0) | **[submission/Poster_Phase_B_26-1-R-14.pptx](submission/Poster_Phase_B_26-1-R-14.pptx)** |
+| Presentation deck | **[submission/Presentation_26-1-R-14.pptx](submission/Presentation_26-1-R-14.pptx)** |
+
+## Documentation
 
 | I want to… | Read |
 |---|---|
-| Install it and get the data | **[SETUP.md](SETUP.md)** |
+| Install it and get the data | **[docs/SETUP.md](docs/SETUP.md)** |
 | Run it / change settings | **[docs/USER_MANUAL.md](docs/USER_MANUAL.md)** |
 | Present it live (≈5 min) | **[docs/DEMO.md](docs/DEMO.md)** |
 | Understand what it does, step by step | **[docs/WALKTHROUGH.md](docs/WALKTHROUGH.md)** |
 | Understand how the code is built | **[docs/CODE_GUIDE.md](docs/CODE_GUIDE.md)** |
 | See the full design decisions + results (canonical record) | **[docs/PROJECT_LOG.md](docs/PROJECT_LOG.md)** |
 | See the plan / phase history | **[docs/ROADMAP.md](docs/ROADMAP.md)** |
+
+## Repository layout
+
+```
+submission/   the graded deliverables — Phase A & B books, poster, presentation
+docs/         all documentation (setup, user manual, demo, design log, code guide)
+src/          the Python package (data · physics · analysis · viz)
+scripts/      entry points you run (run_all, run_synthetic, sweeps, …)
+tests/        quick correctness checks for the physics
+config/       default.yaml — every tunable setting ("knob")
+data/         disaster inputs (EM-DAT / GDIS) and the cached climate cube
+outputs/      generated maps, the event catalogue, and the dashboard
+```
 
 ## At a glance
 

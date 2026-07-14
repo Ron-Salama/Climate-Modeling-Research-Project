@@ -1,6 +1,6 @@
 # Climate Capacitor — Build Roadmap
 
-Source of truth for scope and sequencing. The proposal (`Final_Project_A_26-1-R-14..docx`) is the *what/why*; this is the *how/when*.
+Source of truth for scope and sequencing. The Phase A book (`submission/Project_Book_Phase_A_26-1-R-14.docx`) is the *what/why*; this is the *how/when*.
 
 ## Core idea (the analogy)
 
