@@ -15,6 +15,9 @@ figures/
 *.gif
 *.mp4
 
+# ...but keep the submission video (a graded deliverable)
+!submission/*.mp4
+
 # Python
 __pycache__/
 *.py[cod]
