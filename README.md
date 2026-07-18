@@ -37,6 +37,7 @@ The graded deliverables live in **[`submission/`](submission/)**:
 | Project Book — Phase A | **[submission/Project_Book_Phase_A_26-1-R-14.docx](submission/Project_Book_Phase_A_26-1-R-14.docx)** |
 | Poster (A0) | **[submission/Poster_Phase_B_26-1-R-14.pptx](submission/Poster_Phase_B_26-1-R-14.pptx)** |
 | Presentation deck | **[submission/Presentation_26-1-R-14.pptx](submission/Presentation_26-1-R-14.pptx)** |
+| Video (≤2 min) | **[submission/Video_26-1-R-14.mp4](submission/Video_26-1-R-14.mp4)** |
 
 ## Documentation
 
